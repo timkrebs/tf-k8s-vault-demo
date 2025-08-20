@@ -1,0 +1,14 @@
+# VaultConnection resource for demo-app namespace
+# This connects to your Vault instance - update VAULT_ADDR accordingly
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultConnection
+metadata:
+  name: default
+  namespace: demo-app
+  labels:
+    app: vault-secrets-demo
+spec:
+  # Update this with your actual Vault address
+  # If running Vault in the same cluster, use service name
+  # If external Vault, use the external URL
+  address: "https://vlt-cl-01.proxcloud.io"  # CHANGE THIS TO YOUR VAULT ADDRESS

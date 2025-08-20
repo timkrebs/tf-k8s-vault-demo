@@ -1,0 +1,32 @@
+# Optional: Ingress resource for more advanced routing
+# This requires an ingress controller to be installed in the cluster
+# NOTE: This ingress is configured to use the LoadBalancer hostname
+# The deploy script will automatically update the host field with the actual LoadBalancer hostname
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vault-secrets-demo-ingress
+  namespace: demo-app
+  labels:
+    app: vault-secrets-demo
+  annotations:
+    # Use AWS Load Balancer Controller for ALB
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /api/health
+    # Optional: Enable HTTPS
+    # alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:region:account:certificate/xxxxx
+spec:
+  rules:
+  - host: LOADBALANCER_HOSTNAME_PLACEHOLDER  # Will be replaced by deploy script with actual LoadBalancer hostname
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: vault-secrets-demo-service
+            port:
+              number: 80

@@ -1,0 +1,17 @@
+# VaultAuth resource for Kubernetes authentication to Vault
+# This configures how the VSO authenticates with Vault using Kubernetes JWT tokens
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: vault-auth
+  namespace: demo-app
+  labels:
+    app: vault-secrets-demo
+spec:
+  method: kubernetes
+  mount: kubernetes
+  kubernetes:
+    role: vso-role  # This should match the Vault role created in your tutorial
+    serviceAccount: default
+    # Note: audience is now handled by the Vault role configuration for Vault 1.21+
+  vaultConnectionRef: default

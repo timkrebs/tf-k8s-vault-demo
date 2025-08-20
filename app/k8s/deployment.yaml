@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-secrets-demo
+  namespace: demo-app
+  labels:
+    app: vault-secrets-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vault-secrets-demo
+  template:
+    metadata:
+      labels:
+        app: vault-secrets-demo
+    spec:
+      serviceAccountName: default
+      containers:
+      - name: webapp
+        # You'll need to build and push this image to a registry
+        # For local testing with kind/minikube, you can load the image directly
+        image: vault-secrets-demo:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        
+        # Environment variables populated from Kubernetes secrets
+        # These secrets are automatically synced from Vault by VSO
+        env:
+        # MyApp secrets (from secret/myapp in Vault)
+        - name: MYAPP_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: myapp-credentials
+              key: username
+        - name: MYAPP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: myapp-credentials
+              key: password
+        - name: MYAPP_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: myapp-credentials
+              key: api_key
+        
+        # Database secrets (from secret/database in Vault)
+        - name: DATABASE_HOST
+          valueFrom:
+            secretKeyRef:
+              name: database-credentials
+              key: host
+        - name: DATABASE_PORT
+          valueFrom:
+            secretKeyRef:
+              name: database-credentials
+              key: port
+        - name: DATABASE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: database-credentials
+              key: username
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: database-credentials
+              key: password
+        
+        # Kubernetes downward API for pod information
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: SERVICE_ACCOUNT
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.serviceAccountName
+        
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      
+      # Security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
